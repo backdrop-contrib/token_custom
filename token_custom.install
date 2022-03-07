@@ -1,0 +1,87 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the token_custom module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function token_custom_install() {
+  $t = get_t();
+  backdrop_set_message($t('The Token Custom module was installed. You can manage your custom tokens in the <a href=\'@admin_url\'>admin pages</a>.',
+                        array('@admin_url' => url('admin/structure/token-custom'))));
+  // Dynamically generated variable data was detected on the following lines.
+}
+
+/**
+ * Implements hook_schema().
+ */
+function token_custom_schema() {
+  $schema = array();
+
+  $schema['token_custom'] = array(
+    'description' => 'The database table for the Token Custom module.',
+    'fields' => array(
+      'machine_name' => array(
+        'description' => 'The token\'s machine name',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The token\'s human readable name',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'description' => array(
+        'description' => 'The token\'s description, as shown on the token listings',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The token\'s type, defining the context in which it will be available',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'content' => array(
+        'description' => 'The content for the token',
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'format' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'The format for the content on the token.',
+        'default' => 'php_code',
+      ),
+    ),
+    'primary key' => array('machine_name'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function token_custom_uninstall() {
+  config_clear('token_custom.settings', 'token_custom_types');
+}
+
+/**
+ * Migrate token_custom variables to config.
+ */
+function token_custom_update_1000() {
+  $config = config('token_custom.settings');
+  $config->set('token_custom_types', update_variable_get('token_custom_types', array()));
+  $config->save();
+
+  update_variable_del('token_custom_types');
+}
