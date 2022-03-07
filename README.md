@@ -3,7 +3,8 @@
 It gives the user the ability to create custom tokens using standart input filters.
 If the php filter is enabled, you can use php code to access token arguments (i.e. the $data array).
 
-#Initail port for testing
+@TODO - Remove PHP Filter
+# Initail port for testing
 
 ## Requirements:
 No dependencies
