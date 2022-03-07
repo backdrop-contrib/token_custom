@@ -1,4 +1,4 @@
-#Custom Tokens
+# Custom Tokens
 
 It gives the user the ability to create custom tokens using standart input filters.
 If the php filter is enabled, you can use php code to access token arguments (i.e. the $data array).
@@ -6,9 +6,7 @@ If the php filter is enabled, you can use php code to access token arguments (i.
 #Initail port for testing
 
 ## Requirements:
-
-dependencies[] = filter
-dependencies[] = token
+No dependencies
 
 ## Installation:
 Install this module using the official Backdrop CMS instructions at https://docs.backdropcms.org/documentation/extend-with-modules
@@ -32,7 +30,7 @@ Bugs and Feature requests should be reported in the Issue Queue: https://github.
 
 ## Credits:
 
-###Original Authors 
+### Original Authors 
 Ariel Barreiro (hanoii) http://drupal.org/user/23157
 abarrei@gmail.com
 
@@ -42,5 +40,5 @@ ggaspaio@gmail.com
 ## Sponsorship:
  - [Albany Computer Services] (https://www.albany-computers.co.uk)
 
-##License
+## License
 This project is GPL v2 software. See the LICENSE.txt file in this directory for complete text.
