@@ -15,7 +15,7 @@ Install this module using the official Backdrop CMS instructions at https://docs
 Visit the configuration page under admin/structure/token-custom
 
 ## Documentation:
-THis module is a fork of https://www.drupal.org/project/token_custom
+This module is a fork of https://www.drupal.org/project/token_custom Version 7.x-2.0
 
 1.Go to "Administer" -> "Build" -> "Tokens" and start creating the tokens you need.
 
