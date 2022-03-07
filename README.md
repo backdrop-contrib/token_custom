@@ -15,7 +15,10 @@ Install this module using the official Backdrop CMS instructions at https://docs
 Visit the configuration page under admin/structure/token-custom
 
 ## Documentation:
+THis module is a fork of https://www.drupal.org/project/token_custom
+
 1.Go to "Administer" -> "Build" -> "Tokens" and start creating the tokens you need.
+
 2.You need to assign proper permissions to any role you would like to be able
 to create additional PHP tokens.
 
