@@ -156,7 +156,7 @@ function token_custom_token_info() {
       'description' => $token->description,
     );
   }
-
+  
   return $token_info;
 }
 
@@ -167,7 +167,7 @@ function token_custom_tokens($type, $tokens, array $data = array(), array $optio
 
   $return = array();
 
-  // Load all our custom modules mentionned in the $tokens array.
+  // Load all our custom modules mentioned in the $tokens array.
   $custom_tokens = token_custom_load_multiple(array_keys($tokens));
 
   foreach ($custom_tokens as $machine_name => $custom_token) {
@@ -177,7 +177,6 @@ function token_custom_tokens($type, $tokens, array $data = array(), array $optio
         = token_custom_token_render($machine_name, $custom_token->content, $data, $options);
     }
   }
-
   return $return;
 }
 
@@ -474,45 +473,12 @@ function token_custom_token_render($machine_name, $code, $data, $options) {
 
   // Determine which format to use.
   $format = isset($token->format) ? $token->format : NULL;
+  
+  // Format the output using the format.
+  // check_markup($text, $format_id = NULL, $langcode = '', $cache = FALSE)
 
-  /*
-   * If it's a php_filter token, then pass the $data variable
-   * to the evaluated token.
-   */
-  if ($format == 'php_code') {
-
-    // Generate a unique static key.
-    $static_count = &backdrop_static('token_custom_data:counter', 0);
-    $static_key = 'token_custom_data:' . $static_count;
-    $static_count++;
-
-    /*
-     * Store value in static cache and leave it there.
-     */
-    backdrop_static($static_key,
-                  array(
-      'data' => $data,
-      'options' => $options,
-    ));
-
-    // Add static data to the evaluated code.
-    $code = '
-<?php
-  if ($static = backdrop_static(\'' . $static_key . '\')) {
-    extract($static);
-  } ?>' . $code;
-
-    $output = check_markup($code, $format);
-
-    // Clear static variable to potentially free memory.
-    backdrop_static_reset($static_key);
-
-    return $output;
-  }
-  else {
-    // Format the output using the format.
-    return check_markup($code, $format);
-  }
+  //return check_markup($code, $format);
+  return $code;
 }
 
 /**
