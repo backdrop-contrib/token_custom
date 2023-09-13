@@ -1,7 +1,7 @@
 type = module
 name = Custom tokens
 description = Allow users to define custom tokens to use throughout the site
-version = 1.2.1
+version = 1.3.0
 package = Core
 backdrop = 1.x
 type = module

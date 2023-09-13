@@ -156,7 +156,7 @@ function token_custom_token_info() {
       'description' => $token->description,
     );
   }
-  
+
   return $token_info;
 }
 
@@ -321,7 +321,7 @@ function token_custom_type_delete($delete_type) {
  *
  * @param object|array $token
  *   An object or an array containing the values to save.
- *   The key 'is_new' determines if the token is being inserted or updated
+ *   The key 'is_new' determines if the token is being inserted or updated.
  *
  * @return bool
  *   True on success.
@@ -375,9 +375,8 @@ function token_custom_load($machine_name = NULL) {
  */
 function token_custom_load_multiple($names = NULL) {
 
-  // FIXME Use backdrop_static instead of static keyword.
-  static $tokens = array();
-  static $all_loaded = FALSE;
+  $tokens = &backdrop_static('tokens', array());
+  $all_loaded = &backdrop_static(__FUNCTION__, FALSE);
 
   if ($names === NULL) {
     if (!$all_loaded) {
@@ -473,7 +472,7 @@ function token_custom_token_render($machine_name, $code, $data, $options) {
 
   // Determine which format to use.
   $format = isset($token->format) ? $token->format : NULL;
-  
+
   // Format the output using the format.
   // check_markup($text, $format_id = NULL, $langcode = '', $cache = FALSE)
 

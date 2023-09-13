@@ -100,7 +100,7 @@ function token_custom_list_page() {
     t('Machine name'),
     t('Type'),
     t('Description'),
-    t('Demo (if available)'),
+    t('Example (if available)'),
   );
 
   // Add extra header cell if edit/delete links were printed.
@@ -136,7 +136,7 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Token name'),
-    '#description' => t("The token's readable name"),
+    '#description' => t("The token's readable name, this is also used to generate the machine readable name."),
     '#default_value' => $token ? $token->name : NULL,
     '#maxlength' => 128,
     '#required' => TRUE,
@@ -159,7 +159,7 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
   $form['description'] = array(
     '#type' => 'textfield',
     '#title' => t('Token description'),
-    '#description' => t("The token's description that will appear in the token list"),
+    '#description' => t("The token's description that will appear in the list of available tokens."),
     '#default_value' => $token ? $token->description : NULL,
     '#maxlength' => 255,
     '#required' => TRUE,
@@ -177,7 +177,7 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
   $form['type'] = array(
     '#type' => 'select',
     '#title' => 'Token type',
-    '#description' => t('The token type determines the availability of the token according to the data in the $data array (ex. a token of type <em>node</em> will need $data[node].'),
+    '#description' => t('The token type determines the availability of the token according to the data in the $data array (ex. a token of type <em>node</em> will need $data[node]).'),
     '#options' => $options,
     '#maxlength' => 128,
     '#default_value' => ($token && !empty($token->type)) ? $token->type : 0,
@@ -186,14 +186,14 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
   $form['content'] = array(
     '#type' => 'text_format',
     '#title' => t('Content'),
-    '#description' => t('Enter the content that will be replaced with this token.'),
+    '#description' => t('The content to be inserted when this token is used.'),
     '#default_value' => isset($token->content) ? $token->content : '',
     '#format' => isset($token->format) ? $token->format : filter_default_format(),
   );
 
   // Add help text if PHP filter is available.
   if (module_exists('php')) {
-    $ref = l('token_replace()', 'http://api.drupal.org/api/backdrop/includes--token.inc/function/token_replace/7',
+    $ref = l('token_replace()', 'https://docs.backdropcms.org/api/backdrop/core%21includes%21token.inc/function/token_replace/1',
              array('attributes' => array('target' => '_blank')));
     $form['content']['#description']
       .= '<br />'
@@ -214,7 +214,6 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
     );
   }
 
-
   return $form;
 }
 
@@ -222,16 +221,16 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
  * The add/edit token type form
  *
  * @param array $form
- *   The token type edit form
+ *   The token type edit form.
  * @param array $form_state
- *   The form state
+ *   The form state.
  * @param string $op
- *   Either 'add' or 'edit', according to the operation performed
+ *   Either 'add' or 'edit', according to the operation performed.
  * @param object $type
  *   If $op is 'edit', $type contains the loaded token type to edit.
  *
  * @return array
- *   The complete form array
+ *   The complete form array.
  */
 function token_custom_type_edit_form($form, &$form_state, $op, $type = NULL) {
 
@@ -243,7 +242,7 @@ function token_custom_type_edit_form($form, &$form_state, $op, $type = NULL) {
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t("Token type's name"),
-    '#description' => t("The token types's readable name"),
+    '#description' => t("The token type's readable name"),
     '#default_value' => $type ? $type->name : NULL,
     '#maxlength' => 255,
     '#required' => TRUE,
@@ -339,8 +338,7 @@ function token_custom_edit_form_submit($form, &$form_state) {
 
   if ($form_state['token_custom']['op'] == 'edit'
      && $form_state['triggering_element']['#id'] == 'edit-delete') {
-    $form_state['redirect'] = 'admin/structure/token-custom/'
-                            . $form_state['values']['machine_name'] . '/delete';
+    $form_state['redirect'] = 'admin/structure/token-custom/' . $form_state['values']['machine_name'] . '/delete';
     return;
   }
 
@@ -430,7 +428,7 @@ function token_custom_delete_confirm_form_submit($form, &$form_state) {
  * @param array $form
  *   The delete token form.
  * @param array $form_state
- *   Form state array
+ *   Form state array.
  * @param object $token_type
  *   The token type to delete.
  *
@@ -463,9 +461,9 @@ function token_custom_type_delete_confirm_form_submit($form, &$form_state) {
     backdrop_set_message(
       t('Token type <em>@machine_name</em> deleted. All tokens using it were moved to type <em>@default_type</em>.',
         array(
-      '@machine_name' => $form_state['token_custom']['token_type']->machine_name,
-      '@default_type' => TOKEN_CUSTOM_DEFAULT_TYPE,
-    )
+          '@machine_name' => $form_state['token_custom']['token_type']->machine_name,
+          '@default_type' => TOKEN_CUSTOM_DEFAULT_TYPE,
+        )
       )
     );
   }
