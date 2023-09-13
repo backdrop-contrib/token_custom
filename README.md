@@ -41,6 +41,8 @@ ggaspaio@gmail.com
 
 ## Sponsorship:
  - [Albany Computer Services] (https://www.albany-computers.co.uk)
+ - [Albany Web Design] (https://www.albanywebdesign.co.uk)
+ - [Albany Hosting] (https://www.albany-hosting.co.uk)
 
 ## License
 This project is GPL v2 software. See the LICENSE.txt file in this directory for complete text.
