@@ -375,7 +375,7 @@ function token_custom_load($machine_name = NULL) {
  */
 function token_custom_load_multiple($names = NULL) {
 
-  $tokens = &backdrop_static('tokens', array());
+  $tokens = &backdrop_static(__FUNCTION__ . '_tokens', array());
   $all_loaded = &backdrop_static(__FUNCTION__, FALSE);
 
   if ($names === NULL) {
