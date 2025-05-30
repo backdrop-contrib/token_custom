@@ -1,6 +1,6 @@
 # Custom Tokens
 
-It gives the user the ability to create custom tokens using standart input filters.
+It gives the user the ability to create custom tokens using standard input filters.
 If the php filter is enabled, you can use php code to access token arguments (i.e. the $data array).
 
 ## Requirements:
