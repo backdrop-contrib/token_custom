@@ -2,12 +2,10 @@
 
 /**
  * @file
- * It gives the user the ability to create custom tokens using PHP code
- * for specific replacements that can improve other modules relying
- * on the token Backdrop 7 core API.
+ * Allows users to create custom tokens for specific replacements.
  */
 
-/*
+/**
  * The default token type machine name.
  */
 define('TOKEN_CUSTOM_DEFAULT_TYPE', 'custom');
@@ -19,11 +17,11 @@ function token_custom_help($path, $arg) {
   switch ($path) {
     case 'admin/help#token_custom':
       $output = '<p>'
-              . t("This allows you to create custom tokens for use throughtout the site using the <a href='@admin_url'>administration pages</a>",
+              . t("This allows you to create custom tokens for use throughout the site using the <a href='@admin_url'>administration pages</a>.",
                   array('@admin_url' => url('admin/structure/token-custom')))
               . '</p>';
       $output .= '<p>'
-              . t('Tokens can be created using markup or PHP and have access to context related objects.')
+              . t('Tokens can be created using markup and can nest other tokens inside them.')
               . '</p>';
       return $output;
   }
@@ -35,13 +33,13 @@ function token_custom_help($path, $arg) {
 function token_custom_permission() {
   return array(
     'administer custom tokens' => array(
-      'title' => t('Manage custom tokens using PHP.'),
-      'description' => t('Create/edit/delete custom tokens using markup or PHP.'),
+      'title' => t('Administer custom tokens'),
+      'description' => t('Create, edit, and delete custom tokens.'),
       'restrict access' => TRUE,
     ),
     'list custom tokens' => array(
-      'title' => t("Access the custom token's administration page."),
-      'description' => t('View custom tokens.'),
+      'title' => t("Access the custom token administration page"),
+      'description' => t('View the list of available custom tokens.'),
     ),
   );
 }
@@ -60,18 +58,15 @@ function token_custom_menu() {
 
   $items['admin/structure/token-custom/list'] = array(
     'title' => 'Custom tokens',
-    'description' => 'List of custom tokens.',
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
 
   $items['admin/structure/token-custom/add'] = array(
     'title' => 'Add token',
-    'description' => 'Create custom tokens',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('token_custom_edit_form', 'add'),
     'access arguments' => array('administer custom tokens'),
     'file' => 'token_custom.admin.inc',
-    'weight' => 1,
     'type' => MENU_LOCAL_ACTION,
   );
 
@@ -81,12 +76,10 @@ function token_custom_menu() {
     'page arguments' => array('token_custom_edit_form', 'edit', 3),
     'access arguments' => array('administer custom tokens'),
     'file' => 'token_custom.admin.inc',
-    'type' => MENU_CALLBACK,
-    'weight' => 10,
   );
 
   $items['admin/structure/token-custom/%token_custom/delete'] = array(
-    'title' => 'Delete custom token',
+    'title' => 'Delete token',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('token_custom_delete_confirm_form', 3),
     'access arguments' => array('administer custom tokens'),
@@ -95,22 +88,19 @@ function token_custom_menu() {
 
   $items['admin/structure/token-custom/type'] = array(
     'title' => 'Custom token types',
-    'description' => 'View custom token types',
     'page callback' => 'token_custom_type_list_page',
     'access arguments' => array('administer custom tokens'),
     'file' => 'token_custom.admin.inc',
-    'weight' => 2,
     'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
   );
 
   $items['admin/structure/token-custom/type/add'] = array(
     'title' => 'Add token type',
-    'description' => 'Create custom token types',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('token_custom_type_edit_form', 'add'),
     'access arguments' => array('administer custom tokens'),
     'file' => 'token_custom.admin.inc',
-    'weight' => 2,
     'type' => MENU_LOCAL_ACTION,
   );
 
@@ -121,11 +111,10 @@ function token_custom_menu() {
     'access callback' => 'token_custom_type_forms_access',
     'access arguments' => array(4),
     'file' => 'token_custom.admin.inc',
-    'type' => MENU_CALLBACK,
   );
 
   $items['admin/structure/token-custom/type/%token_custom_type/delete'] = array(
-    'title' => 'Delete custom token',
+    'title' => 'Delete token type',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('token_custom_type_delete_confirm_form', 4),
     'access callback' => 'token_custom_type_forms_access',
@@ -140,20 +129,21 @@ function token_custom_menu() {
  * Implements hook_token_info().
  */
 function token_custom_token_info() {
-
   $token_info = array();
 
+  // Load custom types.
   foreach (token_custom_type_load_multiple() as $type) {
     $token_info['types'][$type->machine_name] = array(
-      'name' => $type->name,
-      'description' => $type->description,
+      'name' => check_plain($type->name),
+      'description' => check_plain($type->description),
     );
   }
 
+  // Load individual tokens.
   foreach (token_custom_load_multiple() as $token) {
     $token_info['tokens'][$token->type][$token->machine_name] = array(
-      'name' => $token->name,
-      'description' => $token->description,
+      'name' => check_plain($token->name),
+      'description' => check_plain($token->description),
     );
   }
 
@@ -164,44 +154,58 @@ function token_custom_token_info() {
  * Implements hook_tokens().
  */
 function token_custom_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+  $custom_tokens = token_custom_load_multiple();
 
-  $return = array();
-
-  // Load all our custom modules mentioned in the $tokens array.
-  $custom_tokens = token_custom_load_multiple(array_keys($tokens));
-
-  foreach ($custom_tokens as $machine_name => $custom_token) {
-    if (($type == $custom_token->type)
-         && array_key_exists($machine_name, $tokens)) {
-      $return[$tokens[$machine_name]]
-        = token_custom_token_render($machine_name, $custom_token->content, $data, $options);
+  foreach ($tokens as $name => $original) {
+    if (isset($custom_tokens[$name]) && $custom_tokens[$name]->type == $type) {
+      $replacements[$original] = token_custom_token_render($name, $custom_tokens[$name]->content, $data, $options);
     }
   }
-  return $return;
+
+  return $replacements;
 }
 
 /**
- * Access callback for the delete token type form.
+ * Evaluates and renders a custom token.
  *
- * Do not allow deletion of the default custom type.
+ * @param string $machine_name
+ * The machine name of the token.
+ * @param string $content
+ * The raw content of the token.
+ * @param array $data
+ * Data for replacement.
+ * @param array $options
+ * Options for replacement.
+ *
+ * @return string
+ * The rendered output.
+ */
+function token_custom_token_render($machine_name, $content, $data, $options) {
+  $token = token_custom_load($machine_name);
+  if (!$token) {
+    return '';
+  }
+
+  // Replace any nested tokens found within the custom content.
+  $rendered = token_replace($content, $data, $options);
+
+  // Apply the text format (HTML filtering).
+  return check_markup($rendered, $token->format);
+}
+
+/**
+ * Access callback for token type forms.
  *
  * @param object $type
- *   The token type to edit/delete.
+ * The token type to check access for.
  *
  * @return bool
- *   TRUE if user has permission AND type is not the default fixed one.
+ * TRUE if access is granted.
  */
 function token_custom_type_forms_access($type) {
   return user_access('administer custom tokens') && $type->machine_name != TOKEN_CUSTOM_DEFAULT_TYPE;
 }
-
-/*
- * CRUD routines
- * ----------
- *
- * We store the custom types as a variable, since we will
- * probably never have more than 5 or 6.
- */
 
 /**
  * Implements hook_config_info().
@@ -215,21 +219,19 @@ function token_custom_config_info() {
 }
 
 /**
- * Load all custom types.
+ * Load all custom types from config.
  *
  * @return array
- *   The custom token types.
+ * An array of token type objects.
  */
 function token_custom_type_load_multiple() {
-  $default_type = new stdClass();
-  $default_type->name = t('Custom');
-  $default_type->machine_name = TOKEN_CUSTOM_DEFAULT_TYPE;
-  $default_type->description = t('User created tokens types using the Custom Tokens module.');
-
-  // Load token types and make sure the custom type is always there,
-  // and wasn't deleted somewhere.
   $types = config_get('token_custom.settings', 'token_custom_types');
+
   if (!isset($types[TOKEN_CUSTOM_DEFAULT_TYPE])) {
+    $default_type = new stdClass();
+    $default_type->name = t('Custom');
+    $default_type->machine_name = TOKEN_CUSTOM_DEFAULT_TYPE;
+    $default_type->description = t('User created tokens.');
     $types[TOKEN_CUSTOM_DEFAULT_TYPE] = $default_type;
   }
 
@@ -240,10 +242,10 @@ function token_custom_type_load_multiple() {
  * Load a single custom type.
  *
  * @param string $type
- *   The type to load
+ * The machine name of the type.
  *
- * @return bool|array
- *   The loaded type array or FALSE on error.
+ * @return object|bool
+ * The type object or FALSE.
  */
 function token_custom_type_load($type) {
   $types = token_custom_type_load_multiple();
@@ -251,20 +253,15 @@ function token_custom_type_load($type) {
 }
 
 /**
- * Save a custom type.
+ * Save a custom type to config.
  *
- * @param array $type
- *   The custom type to save.
+ * @param object $type
+ * The type object to save.
  */
 function token_custom_type_save($type) {
-  if (!is_object($type)) {
-    $type = (object) $type;
-  }
-
   if ($type->machine_name == TOKEN_CUSTOM_DEFAULT_TYPE) {
     return FALSE;
   }
-
   $types = token_custom_type_load_multiple();
   $types[$type->machine_name] = $type;
   config_set('token_custom.settings', 'token_custom_types', $types);
@@ -272,224 +269,106 @@ function token_custom_type_save($type) {
 }
 
 /**
- * Delete token type.
+ * Delete a custom type.
  *
  * @param string $delete_type
- *   The token type's machine name.
- *
- * @return bool
- *   FALSE if the token type didn't exist. TRUE otherwise.
+ * The machine name of the type to delete.
  */
 function token_custom_type_delete($delete_type) {
-
-  $types = token_custom_type_load_multiple();
-
-  if (empty($delete_type)
-       || !isset($types[$delete_type])) {
-    return FALSE;
-  }
-
-  // Do not allow deleting the default custom type.
   if ($delete_type == TOKEN_CUSTOM_DEFAULT_TYPE) {
     return FALSE;
   }
 
-  // Make sure all tokens with the deleted type are given the custom type.
-  $tokens = token_custom_load_multiple();
-  foreach ($tokens as $token) {
-    if ($token->type == $delete_type) {
-      $token->type = TOKEN_CUSTOM_DEFAULT_TYPE;
-      $token->is_new = FALSE;
-      token_custom_save($token);
-    }
+  $types = token_custom_type_load_multiple();
+  if (!isset($types[$delete_type])) {
+    return FALSE;
   }
 
-  // Remove token type.
+  // Reassign tokens of this type to the default 'custom' type.
+  db_update('token_custom')
+    ->fields(array('type' => TOKEN_CUSTOM_DEFAULT_TYPE))
+    ->condition('type', $delete_type)
+    ->execute();
+
   unset($types[$delete_type]);
   config_set('token_custom.settings', 'token_custom_types', $types);
-
-  // Clear the Token module's token cache table.
-  if (module_exists('token')) {
-    token_clear_cache();
-  }
 
   return TRUE;
 }
 
 /**
- * Saves a token to the database.
+ * Save a token to the database.
  *
- * @param object|array $token
- *   An object or an array containing the values to save.
- *   The key 'is_new' determines if the token is being inserted or updated.
+ * @param object $token
+ * The token object to save.
  *
  * @return bool
- *   True on success.
+ * TRUE on success.
  */
 function token_custom_save($token) {
-  $is_new = is_object($token) ? (bool) $token->is_new : !empty($token['is_new']);
-
-  $return = (bool) backdrop_write_record('token_custom', $token, $is_new?array() : 'machine_name');
-
-  // Clear the Token module's token cache table.
-  if (module_exists('token')) {
-    token_clear_cache();
-  }
-
-  return $return;
+  $is_new = !empty($token->is_new);
+  unset($token->is_new);
+  return (bool) backdrop_write_record('token_custom', $token, $is_new ? array() : 'machine_name');
 }
 
 /**
- * Loads an individual token from the database.
- *
- * Calls on the main loading function that maintains a static cache of
- * the loaded tokens.
+ * Load a single token.
  *
  * @param string $machine_name
- *   The token's machine name.
+ * The machine name of the token.
  *
- * @return object|NULL
- *   The token object or null.
+ * @return object|null
+ * The token object or NULL.
  */
-function token_custom_load($machine_name = NULL) {
-  if (empty($machine_name) || !is_string($machine_name)) {
-    return NULL;
-  }
-
+function token_custom_load($machine_name) {
   $tokens = token_custom_load_multiple(array($machine_name));
   return array_shift($tokens);
 }
 
 /**
- * Loads an array of tokens from the database.
- *
- * Maintains a static cache with the tokens already loaded to
- * avoid unnecessary queries.
+ * Load multiple tokens from DB with static caching.
  *
  * @param array $names
- *   An array containing the machine names of the tokens to return.
- *   If none, then loads and returns all the tokens.
+ * An optional array of machine names to load.
  *
  * @return array
- *   An array of token objects, keyed by the token's machine name.
+ * An array of token objects.
  */
 function token_custom_load_multiple($names = NULL) {
-
-  $tokens = &backdrop_static(__FUNCTION__ . '_tokens', array());
-  $all_loaded = &backdrop_static(__FUNCTION__, FALSE);
+  /** @var array $cache */
+  $cache = &backdrop_static(__FUNCTION__, array());
 
   if ($names === NULL) {
-    if (!$all_loaded) {
-      $loaded = array_keys($tokens);
-      $query = db_select('token_custom')->fields('token_custom');
-      if (!empty($loaded)) {
-        $query->condition('machine_name', $loaded, 'NOT IN');
-      }
-      $results = $query->execute();
-      $all_loaded = TRUE;
-      foreach ($results as $token) {
-        $tokens[$token->machine_name] = $token;
-      }
-    }
-
-    return $tokens;
-  }
-
-  $to_fetch = array();
-  foreach ($names as $name) {
-    if (!array_key_exists($name, $tokens)) {
-      $to_fetch[] = $name;
-    }
-  }
-
-  if (!empty($to_fetch)) {
-    $query = db_select('token_custom')
-               ->fields('token_custom')
-               ->condition('machine_name', $to_fetch, 'IN');
+    $query = db_select('token_custom')->fields('token_custom');
     $results = $query->execute();
-
     foreach ($results as $token) {
-      $tokens[$token->machine_name] = $token;
+      $cache[$token->machine_name] = $token;
+    }
+    return $cache;
+  }
+
+  $to_fetch = array_diff($names, array_keys($cache));
+  if (!empty($to_fetch)) {
+    $results = db_select('token_custom')
+      ->fields('token_custom')
+      ->condition('machine_name', $to_fetch, 'IN')
+      ->execute();
+    foreach ($results as $token) {
+      $cache[$token->machine_name] = $token;
     }
   }
 
-  $return = array();
-  foreach ($names as $name) {
-    if (isset($tokens[$name])) {
-      $return[$name] = $tokens[$name];
-    }
-  }
-
-  return $return;
+  return array_intersect_key($cache, array_flip($names));
 }
 
 /**
- * Delete an individual token from the database.
+ * Delete a token.
  *
  * @param string $machine_name
- *   The token's machine name.
- *
- * @return bool|object
- *   The deleted token object or false on error.
+ * The machine name of the token to delete.
  */
 function token_custom_delete($machine_name) {
-
-  if (!is_string($machine_name) || empty($machine_name)) {
-    return FALSE;
-  }
-
-  $return = db_delete('token_custom')
-              ->condition('machine_name', $machine_name)
-              ->execute();
-
-  // Clear the Token module's token cache table.
-  if (module_exists('token')) {
-    token_clear_cache();
-  }
-
-  return $return;
-}
-
-/**
- * Evaluates a string using the given token.
- *
- * @param string $machine_name
- *   The machine_name of the custom token being used.
- * @param string $code
- *   A string containing the code to evaluate.
- * @param array $data
- *   The $data array passed on to token_replace().
- * @param array $options
- *   The $options array passed on to token_replace().
- *
- * @return string
- *   A string containing the printed output of the code,
- *   followed by the returned output of the code.
- */
-function token_custom_token_render($machine_name, $code, $data, $options) {
-  // Load the custom token.
-  $token = token_custom_load($machine_name);
-
-  // Determine which format to use.
-  $format = isset($token->format) ? $token->format : NULL;
-
-  // Format the output using the format.
-  // check_markup($text, $format_id = NULL, $langcode = '', $cache = FALSE)
-
-  //return check_markup($code, $format);
-  return $code;
-}
-
-/**
- * Implements hook_features_api().
- */
-function token_custom_features_api() {
-  return array(
-    'token_custom' => array(
-      'name' => 'Custom tokens',
-      'file' => backdrop_get_path('module', 'token_custom') . '/token_custom.features.inc',
-      'default_hook' => 'token_custom_features_default_settings',
-      'feature_source' => TRUE,
-    ),
-  );
+  return db_delete('token_custom')
+    ->condition('machine_name', $machine_name)
+    ->execute();
 }
