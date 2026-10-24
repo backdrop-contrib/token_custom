@@ -225,7 +225,13 @@ function token_custom_config_info() {
  * An array of token type objects.
  */
 function token_custom_type_load_multiple() {
-  $types = config_get('token_custom.settings', 'token_custom_types');
+  $types = (array) config_get('token_custom.settings', 'token_custom_types');
+
+  // Config stores the types as JSON and returns each one as an array, but
+  // every caller reads them as objects ($type->machine_name).
+  foreach ($types as $machine_name => $type) {
+    $types[$machine_name] = (object) $type;
+  }
 
   if (!isset($types[TOKEN_CUSTOM_DEFAULT_TYPE])) {
     $default_type = new stdClass();
