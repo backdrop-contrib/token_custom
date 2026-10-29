@@ -17,7 +17,7 @@ Git tag: `1.x-1.4.1`.
 - Docblocks in Backdrop format.
 
 ### Removed
-- `token_custom.features.inc` (Backdrop has no Features module).
+- `token_custom.features.inc`: D7 Features integration, unused since 1.x-1.4.0 dropped `hook_features_api()`.
 
 ## 1.x-1.4.0 (2026-03-19)
 
