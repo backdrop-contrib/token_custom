@@ -9,7 +9,7 @@
  * Callback for the token_custom admin list page.
  *
  * @return string
- * The type page HTML.
+ *   The type page HTML.
  */
 function token_custom_type_list_page() {
   $variables = array();
@@ -57,7 +57,7 @@ function token_custom_type_list_page() {
  * Callback for the token_custom token list page.
  *
  * @return string
- * The token list page HTML.
+ *   The token list page HTML.
  */
 function token_custom_list_page() {
   $tokens = token_custom_load_multiple();
@@ -124,16 +124,16 @@ function token_custom_list_page() {
  * The add/edit token form.
  *
  * @param array $form
- * The form array.
+ *   The form array.
  * @param array $form_state
- * The form state.
+ *   The form state.
  * @param string $op
- * Either 'add' or 'edit', according to the operation performed.
+ *   Either 'add' or 'edit', according to the operation performed.
  * @param object $token
- * If $op is 'edit', $token contains the loaded token to edit.
+ *   If $op is 'edit', $token contains the loaded token to edit.
  *
  * @return array
- * The token edit/add form.
+ *   The token edit/add form.
  */
 function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
   $form_state['token_custom']['op'] = $op;
@@ -175,7 +175,7 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
   foreach ($token_info['types'] as $type => $info) {
     $options[$type] = $info['name'];
     if (!empty($info['needs-data'])) {
-      $options[$type] .= ' (' . t('Context: !data', array('!data' => $info['needs-data'])) . ')';
+      $options[$type] .= ' (' . t('Context: @data', array('@data' => $info['needs-data'])) . ')';
     }
   }
 
@@ -188,7 +188,7 @@ function token_custom_edit_form($form, &$form_state, $op, $token = NULL) {
     '#required' => TRUE,
   );
 
-$form['content'] = array(
+  $form['content'] = array(
     '#type' => 'text_format',
     '#title' => t('Token Content'),
     '#description' => t('Enter the text this token should display. You may use other tokens here.') . '<br />' .
@@ -211,6 +211,7 @@ $form['content'] = array(
       '#type' => 'submit',
       '#value' => t('Delete'),
       '#limit_validation_errors' => array(),
+      '#submit' => array('token_custom_edit_form_delete_submit'),
     );
   }
 
@@ -218,19 +219,34 @@ $form['content'] = array(
 }
 
 /**
+ * Submit handler for the Delete button on the token edit form.
+ *
+ * Sends the user to the delete confirmation. The machine name comes from the
+ * loaded token, because #limit_validation_errors leaves no submitted values.
+ *
+ * @param array $form
+ *   The form array.
+ * @param array $form_state
+ *   The form state array.
+ */
+function token_custom_edit_form_delete_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/structure/token-custom/' . $form_state['token_custom']['token']->machine_name . '/delete';
+}
+
+/**
  * The add/edit token type form.
  *
  * @param array $form
- * The token type edit form.
+ *   The token type edit form.
  * @param array $form_state
- * The form state.
+ *   The form state.
  * @param string $op
- * Either 'add' or 'edit', according to the operation performed.
+ *   Either 'add' or 'edit', according to the operation performed.
  * @param object $type
- * If $op is 'edit', $type contains the loaded token type to edit.
+ *   If $op is 'edit', $type contains the loaded token type to edit.
  *
  * @return array
- * The complete form array.
+ *   The complete form array.
  */
 function token_custom_type_edit_form($form, &$form_state, $op, $type = NULL) {
   $form_state['token_custom']['op'] = $op;
@@ -275,6 +291,7 @@ function token_custom_type_edit_form($form, &$form_state, $op, $type = NULL) {
       '#type' => 'submit',
       '#value' => t('Delete'),
       '#limit_validation_errors' => array(),
+      '#submit' => array('token_custom_type_edit_form_delete_submit'),
     );
   }
 
@@ -282,19 +299,29 @@ function token_custom_type_edit_form($form, &$form_state, $op, $type = NULL) {
 }
 
 /**
+ * Submit handler for the Delete button on the token type edit form.
+ *
+ * Sends the user to the delete confirmation. The machine name comes from the
+ * loaded type, because #limit_validation_errors leaves no submitted values.
+ *
+ * @param array $form
+ *   The form array.
+ * @param array $form_state
+ *   The form state array.
+ */
+function token_custom_type_edit_form_delete_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/structure/token-custom/type/' . $form_state['token_custom']['type']->machine_name . '/delete';
+}
+
+/**
  * Submit callback for token_custom_type_edit_form.
  *
  * @param array $form
- * The form array.
+ *   The form array.
  * @param array $form_state
- * The submitted form state.
+ *   The submitted form state.
  */
 function token_custom_type_edit_form_submit($form, &$form_state) {
-  if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == t('Delete')) {
-    $form_state['redirect'] = 'admin/structure/token-custom/type/' . $form_state['values']['machine_name'] . '/delete';
-    return;
-  }
-
   $type = (object) array(
     'name' => $form_state['values']['name'],
     'machine_name' => $form_state['values']['machine_name'],
@@ -310,16 +337,11 @@ function token_custom_type_edit_form_submit($form, &$form_state) {
  * Submit handler for the custom token admin form.
  *
  * @param array $form
- * The form array.
+ *   The form array.
  * @param array $form_state
- * The form state array.
+ *   The form state array.
  */
 function token_custom_edit_form_submit($form, &$form_state) {
-  if (isset($form_state['triggering_element']['#value']) && $form_state['triggering_element']['#value'] == t('Delete')) {
-    $form_state['redirect'] = 'admin/structure/token-custom/' . $form_state['values']['machine_name'] . '/delete';
-    return;
-  }
-
   $token = (object) array(
     'name' => $form_state['values']['name'],
     'machine_name' => $form_state['values']['machine_name'],
@@ -344,14 +366,14 @@ function token_custom_edit_form_submit($form, &$form_state) {
  * Confirm custom token delete action.
  *
  * @param array $form
- * The delete token form.
+ *   The delete token form.
  * @param array $form_state
- * Form state array.
+ *   Form state array.
  * @param object $token
- * The token object to delete.
+ *   The token object to delete.
  *
  * @return array
- * The complete form.
+ *   The complete form.
  */
 function token_custom_delete_confirm_form($form, &$form_state, $token) {
   $form_state['token_custom']['token'] = $token;
@@ -369,9 +391,9 @@ function token_custom_delete_confirm_form($form, &$form_state, $token) {
  * Delete token form submit callback.
  *
  * @param array $form
- * The form array.
+ *   The form array.
  * @param array $form_state
- * The form state array.
+ *   The form state array.
  */
 function token_custom_delete_confirm_form_submit($form, &$form_state) {
   token_custom_delete($form_state['token_custom']['token']->machine_name);
@@ -383,14 +405,14 @@ function token_custom_delete_confirm_form_submit($form, &$form_state) {
  * Confirm custom token type delete action.
  *
  * @param array $form
- * The delete token form.
+ *   The delete token form.
  * @param array $form_state
- * Form state array.
+ *   Form state array.
  * @param object $token_type
- * The token type to delete.
+ *   The token type to delete.
  *
  * @return array
- * The complete form.
+ *   The complete form.
  */
 function token_custom_type_delete_confirm_form($form, &$form_state, $token_type) {
   $form_state['token_custom']['token_type'] = $token_type;
@@ -408,9 +430,9 @@ function token_custom_type_delete_confirm_form($form, &$form_state, $token_type)
  * Delete token type form submit callback.
  *
  * @param array $form
- * The form array.
+ *   The form array.
  * @param array $form_state
- * The form state array.
+ *   The form state array.
  */
 function token_custom_type_delete_confirm_form_submit($form, &$form_state) {
   token_custom_type_delete($form_state['token_custom']['token_type']->machine_name);
