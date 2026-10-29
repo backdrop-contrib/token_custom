@@ -169,17 +169,21 @@ function token_custom_tokens($type, $tokens, array $data = array(), array $optio
 /**
  * Evaluates and renders a custom token.
  *
+ * A token that contains itself, directly or through other custom tokens,
+ * renders as an empty string and is logged, rather than recursing until PHP
+ * runs out of memory: core's token_replace() has no guard of its own.
+ *
  * @param string $machine_name
- * The machine name of the token.
+ *   The machine name of the token.
  * @param string $content
- * The raw content of the token.
+ *   The raw content of the token.
  * @param array $data
- * Data for replacement.
+ *   Data for replacement.
  * @param array $options
- * Options for replacement.
+ *   Options for replacement.
  *
  * @return string
- * The rendered output.
+ *   The rendered output.
  */
 function token_custom_token_render($machine_name, $content, $data, $options) {
   $token = token_custom_load($machine_name);
@@ -187,8 +191,20 @@ function token_custom_token_render($machine_name, $content, $data, $options) {
     return '';
   }
 
+  // Tokens currently being rendered, outermost first.
+  $rendering = &backdrop_static(__FUNCTION__, array());
+  if (isset($rendering[$machine_name])) {
+    watchdog('token_custom', 'Custom token %name refers to itself (%chain); it was left empty.', array(
+      '%name' => $machine_name,
+      '%chain' => implode(' > ', array_keys($rendering)) . ' > ' . $machine_name,
+    ), WATCHDOG_WARNING);
+    return '';
+  }
+  $rendering[$machine_name] = TRUE;
+
   // Replace any nested tokens found within the custom content.
   $rendered = token_replace($content, $data, $options);
+  unset($rendering[$machine_name]);
 
   // Apply the text format (HTML filtering).
   return check_markup($rendered, $token->format);
@@ -198,10 +214,10 @@ function token_custom_token_render($machine_name, $content, $data, $options) {
  * Access callback for token type forms.
  *
  * @param object $type
- * The token type to check access for.
+ *   The token type to check access for.
  *
  * @return bool
- * TRUE if access is granted.
+ *   TRUE if access is granted.
  */
 function token_custom_type_forms_access($type) {
   return user_access('administer custom tokens') && $type->machine_name != TOKEN_CUSTOM_DEFAULT_TYPE;
@@ -222,7 +238,7 @@ function token_custom_config_info() {
  * Load all custom types from config.
  *
  * @return array
- * An array of token type objects.
+ *   An array of token type objects.
  */
 function token_custom_type_load_multiple() {
   $types = (array) config_get('token_custom.settings', 'token_custom_types');
@@ -248,10 +264,10 @@ function token_custom_type_load_multiple() {
  * Load a single custom type.
  *
  * @param string $type
- * The machine name of the type.
+ *   The machine name of the type.
  *
  * @return object|bool
- * The type object or FALSE.
+ *   The type object or FALSE.
  */
 function token_custom_type_load($type) {
   $types = token_custom_type_load_multiple();
@@ -262,7 +278,10 @@ function token_custom_type_load($type) {
  * Save a custom type to config.
  *
  * @param object $type
- * The type object to save.
+ *   The type object to save.
+ *
+ * @return object|false
+ *   The saved type, or FALSE for the built-in default type, which is fixed.
  */
 function token_custom_type_save($type) {
   if ($type->machine_name == TOKEN_CUSTOM_DEFAULT_TYPE) {
@@ -278,7 +297,10 @@ function token_custom_type_save($type) {
  * Delete a custom type.
  *
  * @param string $delete_type
- * The machine name of the type to delete.
+ *   The machine name of the type to delete.
+ *
+ * @return bool
+ *   TRUE if deleted; FALSE for the default type or a type that does not exist.
  */
 function token_custom_type_delete($delete_type) {
   if ($delete_type == TOKEN_CUSTOM_DEFAULT_TYPE) {
@@ -306,10 +328,10 @@ function token_custom_type_delete($delete_type) {
  * Save a token to the database.
  *
  * @param object $token
- * The token object to save.
+ *   The token object to save.
  *
  * @return bool
- * TRUE on success.
+ *   TRUE on success.
  */
 function token_custom_save($token) {
   $is_new = !empty($token->is_new);
@@ -321,10 +343,10 @@ function token_custom_save($token) {
  * Load a single token.
  *
  * @param string $machine_name
- * The machine name of the token.
+ *   The machine name of the token.
  *
  * @return object|null
- * The token object or NULL.
+ *   The token object or NULL.
  */
 function token_custom_load($machine_name) {
   $tokens = token_custom_load_multiple(array($machine_name));
@@ -335,10 +357,10 @@ function token_custom_load($machine_name) {
  * Load multiple tokens from DB with static caching.
  *
  * @param array $names
- * An optional array of machine names to load.
+ *   An optional array of machine names to load.
  *
  * @return array
- * An array of token objects.
+ *   An array of token objects.
  */
 function token_custom_load_multiple($names = NULL) {
   /** @var array $cache */
@@ -371,7 +393,10 @@ function token_custom_load_multiple($names = NULL) {
  * Delete a token.
  *
  * @param string $machine_name
- * The machine name of the token to delete.
+ *   The machine name of the token to delete.
+ *
+ * @return int
+ *   The number of rows deleted.
  */
 function token_custom_delete($machine_name) {
   return db_delete('token_custom')

@@ -4,15 +4,15 @@ Custom Tokens allows users to define their own tokens via the administrative UI 
 
 ## Requirements
 - No hard dependencies.
-- **Recommended:** [Fast Token Browser](https://backdropcms.org/project/fast_token_browser) (standard in many Backdrop installations) for an improved UI when selecting tokens.
+- **Recommended:** [Token Filter](https://backdropcms.org/project/token_filter), to use custom tokens in body text and other formatted fields.
 
 ## Installation
 Install this module using the official Backdrop CMS instructions at [https://docs.backdropcms.org/documentation/extend-with-modules](https://docs.backdropcms.org/documentation/extend-with-modules).
 
 ## Configuration and Usage
-1. **Text Formats:** Visit `Configuration > Content authoring > Text editors and formats` (`admin/config/content/formats`). Ensure the "Replace Tokens" filter is enabled for the text formats you intend to use.
+1. **Text Formats:** Visit `Configuration > Content authoring > Text editors and formats` (`admin/config/content/formats`). With Token Filter installed, enable its "Replace tokens" filter for the text formats you intend to use.
 2. **Creating Tokens:** Navigate to `Structure > Custom Tokens` (`admin/structure/token-custom`).
-3. **Nesting:** You can use existing site tokens (like `[site:name]`) inside your custom token content.
+3. **Nesting:** You can use existing site tokens (like `[site:name]`) inside your custom token content. A token cannot contain itself, directly or through other custom tokens; it is left empty and a warning is logged.
 4. **Placement:** Use your custom token anywhere tokens are accepted using the syntax `[custom:your_machine_name]`.
 
 ### Pro-Tip: Avoiding Paragraph Tags in Snippets
@@ -30,13 +30,18 @@ Additional documentation is located in the Wiki: [https://github.com/backdrop-co
 ## Issues
 Bugs and Feature requests should be reported in the Issue Queue: [https://github.com/backdrop-contrib/token_custom/issues](https://github.com/backdrop-contrib/token_custom/issues)
 
+## Security
+Reviewed on 29 October 2026 for the kinds of vulnerability reported in the Drupal security advisories of 7 to 28 October 2026. Those advisories were for Drupal 10/11 and do not apply to Backdrop directly; this module was checked for the same classes of mistake.
+
+Please report security issues privately to security@backdropcms.org, not in the issue queue.
+
 ## Maintainer(s)
 - [Steve Moorhouse (albanycomputers)](https://github.com/albanycomputers)
 - Additional maintainers welcomed.
 
 ## Credits:
 - Steve Moorhouse - Zulip (DrAlbany)
-- Google Gemini 3.1 assisted with the coding of this module.
+- AI Assisted
 
 ### Original Authors
 This module is a port of the Drupal [Custom Tokens](https://www.drupal.org/project/token_custom) module.

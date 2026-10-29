@@ -12,7 +12,6 @@ function token_custom_install() {
   $t = get_t();
   backdrop_set_message($t('The Token Custom module was installed. You can manage your custom tokens in the <a href=\'@admin_url\'>admin pages</a>.',
                         array('@admin_url' => url('admin/structure/token-custom'))));
-  // Dynamically generated variable data was detected on the following lines.
 }
 
 /**
@@ -59,7 +58,6 @@ function token_custom_schema() {
         'length' => 255,
         'not null' => FALSE,
         'description' => 'The format for the content on the token.',
-        'default' => 'php_code',
       ),
     ),
     'primary key' => array('machine_name'),
@@ -72,7 +70,7 @@ function token_custom_schema() {
  * Implements hook_uninstall().
  */
 function token_custom_uninstall() {
-  config_clear('token_custom.settings', 'token_custom_types');
+  config('token_custom.settings')->delete();
 }
 
 /**
@@ -84,4 +82,18 @@ function token_custom_update_1000() {
   $config->save();
 
   update_variable_del('token_custom_types');
+}
+
+/**
+ * Remove the 'php_code' default from the token format column.
+ */
+function token_custom_update_1001() {
+  // Backdrop has no PHP filter, so a token saved with that format renders
+  // nothing. Every save sets a format, so the column needs no default.
+  db_change_field('token_custom', 'format', 'format', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'The format for the content on the token.',
+  ));
 }
